@@ -105,6 +105,7 @@ class _WebRTCVideoCallScreenState extends State<WebRTCVideoCallScreen>
 
       // Initialize WebRTC
       await _webrtcService!.initialize(
+        context: context,
         isVideoCall: true,
         roomId: roomId,
         userId: userId,
