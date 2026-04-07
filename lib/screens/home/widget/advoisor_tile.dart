@@ -12,6 +12,7 @@ import 'package:deepinheart/views/app_icons.dart';
 import 'package:deepinheart/views/colors.dart';
 import 'package:deepinheart/views/custom_text.dart';
 import 'package:deepinheart/views/font_constants.dart';
+import 'package:deepinheart/views/ui_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
@@ -162,9 +163,9 @@ class AdvoisorTile extends StatelessWidget {
                     // 👤 Leading Photo
                     CircleAvatar(
                       radius: 25, // 👈 Thoda bada kiya
-                      backgroundImage: CachedNetworkImageProvider(
-                        currentCounselor.profileImage,
-                      ),
+                      backgroundImage: UIHelper.isValidImageUrl(currentCounselor.profileImage)
+                          ? CachedNetworkImageProvider(currentCounselor.profileImage)
+                          : const AssetImage('assets/images/user_placeholder.png') as ImageProvider,
                       backgroundColor: primaryColor.withOpacity(0.1),
                     ),
                     const SizedBox(width: 12),

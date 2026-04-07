@@ -241,7 +241,9 @@ class _RatingDialogState extends State<RatingDialog>
                           child: CircleAvatar(
                             radius: 30.r,
                             backgroundImage: CachedNetworkImageProvider(
-                              widget.appointment.counselor.image,
+                              UIHelper.getValidImageUrl(
+                                widget.appointment.counselor.image,
+                              ),
                             ),
                           ),
                         ),

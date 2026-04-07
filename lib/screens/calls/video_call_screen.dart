@@ -42,7 +42,7 @@ const bool USE_GENERATED_TOKEN = false; // ⭐ CHANGE TO false FOR PRODUCTION
 // ============================================
 // Set to TRUE to use hardcoded Agora Console token for testing
 // Set to FALSE to use backend API token for production
-const bool USE_TEST_MODE = false; // ⭐ CHANGE THIS TO SWITCH MODES
+const bool USE_TEST_MODE = true; // ⭐ CHANGE THIS TO SWITCH MODES
 
 // Test channel and token (only used when USE_TEST_MODE = true)
 const String TEST_CHANNEL_NAME = "test_video_123";

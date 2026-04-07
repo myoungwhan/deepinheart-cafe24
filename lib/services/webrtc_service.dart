@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:deepinheart/config/webrtc_config.dart';
 import 'package:deepinheart/services/signaling_client.dart';
@@ -46,11 +47,15 @@ class WebRTCService {
   bool get isVideoCall => _isVideoCall;
 
   Future<void> initialize({
+    required BuildContext context,
     required bool isVideoCall,
     required String roomId,
     required String userId,
   }) async {
     try {
+      // Dispose any existing state before initializing
+      await _resetState();
+      
       _isVideoCall = isVideoCall;
       _roomId = roomId;
       _userId = userId;
@@ -60,7 +65,7 @@ class WebRTCService {
       debugPrint('   - User ID: $userId');
       debugPrint('   - Video Call: $isVideoCall');
 
-      await _initializeSignalingClient();
+      await _initializeSignalingClient(context);
       await _createPeerConnection();
       await _getUserMedia();
 
@@ -77,19 +82,78 @@ class WebRTCService {
     }
   }
 
-  Future<void> _initializeSignalingClient() async {
-    // Use default signaling URL unless you later add WebRTC fields to `SettingsData`.
-    final signalingUrl = WebRTCConfig.defaultSignalingUrl;
+  Future<void> _resetState() async {
+    debugPrint('🧹 Resetting WebRTC service state...');
+    
+    // Close peer connection
+    if (_peerConnection != null) {
+      await _peerConnection!.close();
+      _peerConnection = null;
+    }
+
+    // Stop local stream
+    if (_localStream != null) {
+      for (final track in _localStream!.getTracks()) {
+        track.stop();
+      }
+      await _localStream!.dispose();
+      _localStream = null;
+    }
+
+    // Disconnect signaling client
+    if (_signalingClient != null) {
+      _signalingClient!.disconnect();
+      _signalingClient!.dispose();
+      _signalingClient = null;
+    }
+
+    // Clear state
+    _remoteStream = null;
+    _remoteUserId = null;
+    _roomId = null;
+    _userId = null;
+    _currentState = WebRTCConnectionState.disconnected;
+    
+    debugPrint('✅ WebRTC service state reset');
+  }
+
+  Future<void> _initializeSignalingClient(BuildContext context) async {
+    debugPrint('=== WebRTC Service Initialization ===');
+    
+    // Get WebRTC URL from settings - no fallback allowed
+    final settingsProvider = Provider.of<SettingProvider>(context, listen: false);
+    final signalingUrl = settingsProvider.settings?.mediaServerUrl;
+    
+    debugPrint('ð§ Settings loaded successfully: ${settingsProvider.hasSettings}');
+    debugPrint('ð§ Media Server URL from settings: "$signalingUrl"');
+
+    if (signalingUrl == null || signalingUrl.trim().isEmpty) {
+      debugPrint('â WebRTC URL is empty!');
+      debugPrint('ð§ Please configure WebRTC Server URL in admin panel');
+      throw Exception('WebRTC URL is not configured');
+    }
+
+    debugPrint('🚀 Using WebRTC URL: $signalingUrl');
+    
+    // Clean up URL to remove trailing slash
+    final cleanUrl = signalingUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    debugPrint('🔧 Cleaned WebRTC URL: $cleanUrl');
+    debugPrint('🚀 Connecting to WebRTC signaling server...');
 
     _signalingClient = SignalingClient();
     
-    await _signalingClient!.connect(signalingUrl, _userId!);
+    await _signalingClient!.connect(cleanUrl, _userId!);
+    
+    debugPrint('â WebRTC signaling client connected successfully');
     
     // Listen for signaling messages
     _signalingClient!.messageStream.listen(_handleSignalingMessage);
     _signalingClient!.connectedStream.listen((_) {
+      debugPrint('ð Joining room: $_roomId');
       _signalingClient!.joinRoom(_roomId!);
     });
+    
+    debugPrint('=== WebRTC Service Initialization Complete ===');
   }
 
   Future<void> _createPeerConnection() async {

@@ -411,11 +411,9 @@ class CounselorCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 32,
-                  backgroundImage: CachedNetworkImageProvider(
-                    counselor.profileImage.isNotEmpty
-                        ? counselor.profileImage
-                        : testuserprofile,
-                  ),
+                  backgroundImage: UIHelper.isValidImageUrl(counselor.profileImage)
+                      ? CachedNetworkImageProvider(counselor.profileImage)
+                      : const AssetImage('assets/images/user_placeholder.png') as ImageProvider,
                 ),
                 SizedBox(width: 12),
                 Expanded(

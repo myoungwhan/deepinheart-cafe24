@@ -253,7 +253,9 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
           borderRadius: BorderRadius.circular(15),
           image: DecorationImage(
             fit: BoxFit.cover,
-            image: CachedNetworkImageProvider(widget.model!.image),
+            image: UIHelper.isValidImageUrl(widget.model!.image)
+                ? CachedNetworkImageProvider(widget.model!.image)
+                : const AssetImage('assets/images/placeholder.png') as ImageProvider,
           ),
         ),
         child: BlurryContainer(

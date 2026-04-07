@@ -205,9 +205,9 @@ class _ReservationCardState extends State<ReservationCard>
               CircleAvatar(
                 backgroundColor: primaryColor.withOpacity(0.1),
                 radius: 25,
-                backgroundImage: CachedNetworkImageProvider(
-                  appointment!.counselor.image,
-                ),
+                backgroundImage: UIHelper.isValidImageUrl(appointment!.counselor.image)
+                    ? CachedNetworkImageProvider(appointment!.counselor.image)
+                    : const AssetImage('assets/images/user_placeholder.png') as ImageProvider,
               ),
               SizedBox(width: 5),
               Expanded(
