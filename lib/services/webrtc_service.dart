@@ -118,27 +118,38 @@ class WebRTCService {
   }
 
   Future<void> _initializeSignalingClient(BuildContext context) async {
+    debugPrint('=== WebRTC Service Initialization ===');
+    
     // Get WebRTC URL from settings - no fallback allowed
     final settingsProvider = Provider.of<SettingProvider>(context, listen: false);
     final signalingUrl = settingsProvider.settings?.mediaServerUrl;
+    
+    debugPrint('ð§ Settings loaded successfully: ${settingsProvider.hasSettings}');
+    debugPrint('ð§ Media Server URL from settings: "$signalingUrl"');
 
     if (signalingUrl == null || signalingUrl.trim().isEmpty) {
-      debugPrint('❌ WebRTC URL is empty!');
-      debugPrint('🔧 Please configure WebRTC Server URL in admin panel');
+      debugPrint('â WebRTC URL is empty!');
+      debugPrint('ð§ Please configure WebRTC Server URL in admin panel');
       throw Exception('WebRTC URL is not configured');
     }
 
-    debugPrint('🚀 Using WebRTC URL: $signalingUrl');
+    debugPrint('ð Using WebRTC URL: $signalingUrl');
+    debugPrint('ð Connecting to WebRTC signaling server...');
 
     _signalingClient = SignalingClient();
     
     await _signalingClient!.connect(signalingUrl, _userId!);
     
+    debugPrint('â WebRTC signaling client connected successfully');
+    
     // Listen for signaling messages
     _signalingClient!.messageStream.listen(_handleSignalingMessage);
     _signalingClient!.connectedStream.listen((_) {
+      debugPrint('ð Joining room: $_roomId');
       _signalingClient!.joinRoom(_roomId!);
     });
+    
+    debugPrint('=== WebRTC Service Initialization Complete ===');
   }
 
   Future<void> _createPeerConnection() async {
