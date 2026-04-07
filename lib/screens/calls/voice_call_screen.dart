@@ -23,6 +23,18 @@ import 'package:deepinheart/screens/calls/widgets/call_rating_dialog.dart';
 import 'package:deepinheart/services/call_state_manager.dart';
 
 // ============================================
+// 🧪 TEST MODE CONFIGURATION
+// ============================================
+// Set to TRUE to use hardcoded Agora Console token for testing
+// Set to FALSE to use backend API token for production
+const bool USE_TEST_MODE = true; // ⭐ CHANGE THIS TO SWITCH MODES
+
+// Test channel and token (only used when USE_TEST_MODE = true)
+const String TEST_CHANNEL_NAME = "test_voice_123";
+const String TEST_AGORA_TOKEN =
+    "007eJxTYDjMqnlKUbszcfWqP+Jrapa6bo7+8DtUrtrR7o5wYM/kyxkKDIaJqUamiQapiWmp5iZJSaaWKUkpJqaGBpYWhgbmlsnGJYu4MhsCGRnSn/QwMzIwMrAAMYjPBCaZwSQLmORjKEktLokvy0xJzY83NDJmYAAA86ElWw==";
+
+// ============================================
 // 🧪 TOKEN GENERATION CONFIGURATION
 // ============================================
 // Set to TRUE to generate tokens locally (TESTING ONLY)
@@ -96,7 +108,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   // "appointment" = coins already deducted at booking
   String _appointmentType = "";
 
-  String? _agoraToken; // Store fetched Agora token
+  String? _agoraToken =
+      "007eJxTYDjMqnlKUbszcfWqP+Jrapa6bo7+8DtUrtrR7o5wYM/kyxkKDIaJqUamiQapiWmp5iZJSaaWKUkpJqaGBpYWhgbmlsnGJYu4MhsCGRnSn/QwMzIwMrAAMYjPBCaZwSQLmORjKEktLokvy0xJzY83NDJmYAAA86ElWw=="; // Store fetched Agora token
 
   // Webhook service for network state handling
   final AgoraWebhookService _webhookService = AgoraWebhookService();
@@ -396,6 +409,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   Future<void> _fetchAgoraToken() async {
     try {
       debugPrint('🔑 Getting Agora token...');
+
+      // ============================================
+      // 🧪 TEST MODE - Use hardcoded token
+      // ============================================
+      if (USE_TEST_MODE) {
+        _agoraToken = TEST_AGORA_TOKEN;
+        debugPrint('✅ TEST MODE: Using hardcoded Agora Console token');
+        debugPrint('   Test Channel: $TEST_CHANNEL_NAME');
+        debugPrint('   Token length: ${_agoraToken!.length}');
+        debugPrint('   ⚠️  Both devices will use channel "$TEST_CHANNEL_NAME"');
+        return; // Skip backend API call
+      }
+      // ============================================
 
       // ============================================
       // 🧪 GENERATED TOKEN MODE - Generate locally

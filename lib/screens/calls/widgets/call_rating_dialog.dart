@@ -259,11 +259,11 @@ class _CallRatingDialogState extends State<CallRatingDialog>
                             radius: 30.r,
                             backgroundColor: Colors.white.withOpacity(0.2),
                             backgroundImage:
-                                widget.counselorImage != null
+                                UIHelper.isValidImageUrl(widget.counselorImage)
                                     ? NetworkImage(widget.counselorImage!)
                                     : null,
                             child:
-                                widget.counselorImage == null
+                                !UIHelper.isValidImageUrl(widget.counselorImage)
                                     ? Icon(
                                       Icons.person,
                                       size: 30.w,
