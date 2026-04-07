@@ -133,12 +133,16 @@ class WebRTCService {
       throw Exception('WebRTC URL is not configured');
     }
 
-    debugPrint('ð Using WebRTC URL: $signalingUrl');
-    debugPrint('ð Connecting to WebRTC signaling server...');
+    debugPrint('🚀 Using WebRTC URL: $signalingUrl');
+    
+    // Clean up URL to remove trailing slash
+    final cleanUrl = signalingUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    debugPrint('🔧 Cleaned WebRTC URL: $cleanUrl');
+    debugPrint('🚀 Connecting to WebRTC signaling server...');
 
     _signalingClient = SignalingClient();
     
-    await _signalingClient!.connect(signalingUrl, _userId!);
+    await _signalingClient!.connect(cleanUrl, _userId!);
     
     debugPrint('â WebRTC signaling client connected successfully');
     
