@@ -370,9 +370,9 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                           backgroundColor: Colors.white,
                           child: CircleAvatar(
                             radius: 32.r,
-                            backgroundImage: CachedNetworkImageProvider(
-                              reservation.avatarUrl,
-                            ),
+                            backgroundImage: UIHelper.isValidImageUrl(reservation.avatarUrl)
+                                ? CachedNetworkImageProvider(reservation.avatarUrl)
+                                : const AssetImage('assets/images/user_placeholder.png') as ImageProvider,
                           ),
                         ),
                       ),

@@ -6,6 +6,7 @@ import 'package:deepinheart/Controller/Viewmodel/counselor_appointment_provider.
 import 'package:deepinheart/Controller/Viewmodel/favorite_provider.dart';
 import 'package:deepinheart/Controller/Viewmodel/payment_provider.dart';
 import 'package:deepinheart/Controller/Viewmodel/service_provider.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:deepinheart/Controller/Viewmodel/setting_provider.dart';
 import 'package:deepinheart/Controller/Viewmodel/notification_provider.dart';
@@ -396,6 +397,16 @@ Future<void> main() async {
   );
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   setupFlutterNotifications();
+
+  // Initialize Facebook SDK
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    await FacebookAuth.instance.webAndDesktopInitialize(
+      appId: "YOUR_FACEBOOK_APP_ID_HERE", // تأكد من وضع الرقم الصحيح هنا من Console
+      cookie: true,
+      xfbml: true,
+      version: "v15.0",
+    );
+  }
 
   // Initialize Kakao SDK
   KakaoSdk.init(

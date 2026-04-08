@@ -16,6 +16,7 @@ import 'package:deepinheart/Controller/Viewmodel/setting_provider.dart';
 import 'package:deepinheart/Controller/locale_controller.dart';
 import 'package:deepinheart/services/translation_helper.dart';
 import 'package:deepinheart/services/translation_service.dart';
+import 'package:deepinheart/services/call_state_manager.dart';
 import 'package:deepinheart/widgets/emergency_notice_dialog.dart';
 import 'package:deepinheart/main.dart';
 import 'package:deepinheart/screens/auth/login_View.dart';
@@ -123,6 +124,14 @@ class UserViewModel extends ChangeNotifier {
       favoriteProvider.clearFavorites();
     } catch (e) {
       print('Error clearing favorites: $e');
+    }
+
+    // Clear WebRTC call state when user logs out
+    try {
+      await CallStateManager.clearCallState();
+      print('✅ WebRTC call state cleared on logout');
+    } catch (e) {
+      print('Error clearing call state: $e');
     }
 
     // Clear "Remember Me" credentials when user logs out

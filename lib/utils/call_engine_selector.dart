@@ -20,16 +20,21 @@ class CallEngineSelector {
         listen: false,
       ).settings;
       
-      final callServiceType = settings?.callServiceType?.toLowerCase() ?? 'agora';
+      final callServiceType = settings?.callServiceType.toLowerCase() ?? 'agora';
+      
+      debugPrint('🔧 Call service type from settings: $callServiceType');
       
       debugPrint('🔧 ENGINE: $callServiceType');
       debugPrint('🌐 WEBRTC URL: ${settings?.webrtcServerUrl}');
       
       switch (callServiceType) {
         case 'webrtc':
+        case 'custom':
+          debugPrint('🔧 Using WebRTC engine');
           return CallEngine.webrtc;
         case 'agora':
         default:
+          debugPrint('🔧 Using Agora engine');
           return CallEngine.agora;
       }
     } catch (e) {

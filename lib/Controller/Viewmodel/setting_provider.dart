@@ -66,8 +66,10 @@ class SettingProvider extends ChangeNotifier {
     try {
       debugPrint('📱 Fetching app settings...');
 
+      // Add cache busting timestamp
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
-        Uri.parse('${ApiEndPoints.BASE_URL}settings'),
+        Uri.parse('${ApiEndPoints.BASE_URL}settings?t=$timestamp'),
         headers: {'Content-Type': 'application/json'},
       );
 

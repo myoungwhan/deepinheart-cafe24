@@ -691,7 +691,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: NetworkImage(counselor.profileImage),
+                      image: UIHelper.isValidImageUrl(counselor.profileImage)
+                          ? NetworkImage(counselor.profileImage)
+                          : const AssetImage('assets/images/user_placeholder.png') as ImageProvider,
                       fit: BoxFit.cover,
                     ),
                   ),

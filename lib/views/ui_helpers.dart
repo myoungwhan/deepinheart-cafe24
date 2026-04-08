@@ -379,4 +379,22 @@ class UIHelper {
       r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
     ).hasMatch(email);
   }
+
+  static bool isValidImageUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    try {
+      final uri = Uri.parse(url);
+      return uri.hasScheme && uri.hasAuthority;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static String getValidImageUrl(String? url,
+      {String defaultUrl = 'https://via.placeholder.com/150'}) {
+    if (isValidImageUrl(url)) {
+      return url!;
+    }
+    return defaultUrl;
+  }
 }
