@@ -102,13 +102,17 @@ class _WebRTCVoiceCallScreenState extends State<WebRTCVoiceCallScreen>
       _webrtcService!.errorStream.listen(_onError);
 
       // Get signaling URL from settings
+      debugPrint('=== WEBRTC VOICE CALL DEBUG START ===');
       final settingsProvider = Provider.of<SettingProvider>(context, listen: false);
-      final signalingUrl = settingsProvider.settings?.webrtcServerUrl ?? '';
+      debugPrint('Settings Provider Null: ${settingsProvider == null}');
+      debugPrint('Settings Model Null: ${settingsProvider.settingsModel == null}');
+      debugPrint('Settings Data Null: ${settingsProvider.settings == null}');
       
-      debugPrint('=== WEBRTC VOICE CALL DEBUG ===');
+      final signalingUrl = settingsProvider.settings?.webrtcServerUrl ?? '';
       debugPrint('Final Signaling URL: "$signalingUrl"');
       debugPrint('URL Empty: ${signalingUrl.isEmpty}');
-      debugPrint('=== END DEBUG ===');
+      debugPrint('URL Length: ${signalingUrl.length}');
+      debugPrint('=== WEBRTC VOICE CALL DEBUG END ===');
       
       // Initialize WebRTC for voice call
       await _webrtcService!.initialize(
