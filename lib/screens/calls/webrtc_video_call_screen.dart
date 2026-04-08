@@ -10,6 +10,7 @@ import 'package:deepinheart/services/call_state_manager.dart';
 import 'package:deepinheart/screens/calls/widgets/coin_balance_widget.dart';
 import 'package:deepinheart/screens/calls/widgets/call_rating_dialog.dart';
 import 'package:deepinheart/Controller/Viewmodel/userviewmodel.dart';
+import 'package:deepinheart/Controller/Viewmodel/setting_provider.dart';
 import 'package:deepinheart/config/webrtc_config.dart';
 import 'package:deepinheart/views/colors.dart';
 import 'package:deepinheart/views/custom_text.dart';
@@ -103,11 +104,21 @@ class _WebRTCVideoCallScreenState extends State<WebRTCVideoCallScreen>
       _webrtcService!.remoteStream.listen(_onRemoteStream);
       _webrtcService!.errorStream.listen(_onError);
 
+      // Get signaling URL from settings
+      final settingsProvider = Provider.of<SettingProvider>(context, listen: false);
+      final signalingUrl = settingsProvider.settings?.webrtcServerUrl ?? '';
+      
+      debugPrint('=== WEBRTC VIDEO CALL DEBUG ===');
+      debugPrint('Final Signaling URL: "$signalingUrl"');
+      debugPrint('URL Empty: ${signalingUrl.isEmpty}');
+      debugPrint('=== END DEBUG ===');
+      
       // Initialize WebRTC
       await _webrtcService!.initialize(
         isVideoCall: true,
         roomId: roomId,
         userId: userId,
+        signalingUrl: signalingUrl,
       );
 
       // Set local renderer

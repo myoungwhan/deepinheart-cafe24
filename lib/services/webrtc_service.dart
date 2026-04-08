@@ -49,6 +49,7 @@ class WebRTCService {
     required bool isVideoCall,
     required String roomId,
     required String userId,
+    required String signalingUrl,
   }) async {
     try {
       _isVideoCall = isVideoCall;
@@ -60,7 +61,7 @@ class WebRTCService {
       debugPrint('   - User ID: $userId');
       debugPrint('   - Video Call: $isVideoCall');
 
-      await _initializeSignalingClient();
+      await _initializeSignalingClient(signalingUrl);
       await _createPeerConnection();
       await _getUserMedia();
 
@@ -77,23 +78,11 @@ class WebRTCService {
     }
   }
 
-  Future<void> _initializeSignalingClient() async {
-    // Get signaling URL from settings - no fallback, no exceptions
-    final settingsProvider = Get.find<SettingProvider>();
-    final signalingUrl = settingsProvider.settings?.webrtcServerUrl;
+  Future<void> _initializeSignalingClient(String signalingUrl) async {
+    debugPrint('🚨 FINAL SIGNALING URL: $signalingUrl');
 
-    debugPrint('** SIGNALING URL: $signalingUrl');
-
-    // Strict validation - if no URL, fail gracefully
-    if (signalingUrl == null || signalingUrl.isEmpty) {
-      Get.snackbar(
-        "Error".tr,
-        "WebRTC server is not configured in admin panel".tr,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        icon: Icon(Icons.error, color: Colors.white),
-      );
-      return; // Don't throw, just return to prevent crash
+    if (signalingUrl.isEmpty) {
+      throw Exception("WebRTC server not configured");
     }
 
     _signalingClient = SignalingClient();

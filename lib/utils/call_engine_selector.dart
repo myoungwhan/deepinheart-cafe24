@@ -22,6 +22,9 @@ class CallEngineSelector {
       
       final callServiceType = settings?.callServiceType?.toLowerCase() ?? 'agora';
       
+      debugPrint('🔧 ENGINE: $callServiceType');
+      debugPrint('🌐 WEBRTC URL: ${settings?.webrtcServerUrl}');
+      
       switch (callServiceType) {
         case 'webrtc':
           return CallEngine.webrtc;

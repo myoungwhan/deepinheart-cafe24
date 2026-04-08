@@ -76,6 +76,15 @@ class SettingProvider extends ChangeNotifier {
 
         if (data['success'] == true) {
           _settingsModel = SettingsModel.fromJson(data);
+          debugPrint('=== SETTINGS DEBUG ===');
+          debugPrint('Full API Response: ${data.toString()}');
+          debugPrint('=== END SETTINGS DEBUG ===');
+          debugPrint('Call Service Type: ${settings?.callServiceType}');
+          debugPrint('🔥 WebRTC Server URL: ${settings?.webrtcServerUrl}');
+          debugPrint('🔥 URL Empty Check: ${settings?.webrtcServerUrl?.isEmpty ?? true}');
+          debugPrint('🔥 Agora App ID: ${settings?.agoraAppId}');
+          debugPrint('=== END DEBUG ===');
+          debugPrint('');
           debugPrint('✅ Settings fetched successfully');
           debugPrint('   - Coin Price: ${settings?.bCoinPrice}');
           debugPrint('   - Number of Coins: ${settings?.bNumberOfCoins}');

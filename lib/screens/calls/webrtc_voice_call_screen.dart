@@ -10,6 +10,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:deepinheart/screens/calls/widgets/coin_balance_widget.dart';
 import 'package:deepinheart/screens/calls/widgets/call_rating_dialog.dart';
 import 'package:deepinheart/Controller/Viewmodel/userviewmodel.dart';
+import 'package:deepinheart/Controller/Viewmodel/setting_provider.dart';
 import 'package:deepinheart/config/webrtc_config.dart';
 import 'package:deepinheart/views/colors.dart';
 import 'package:deepinheart/views/custom_text.dart';
@@ -100,11 +101,21 @@ class _WebRTCVoiceCallScreenState extends State<WebRTCVoiceCallScreen>
       _webrtcService!.remoteStream.listen(_onRemoteStream);
       _webrtcService!.errorStream.listen(_onError);
 
+      // Get signaling URL from settings
+      final settingsProvider = Provider.of<SettingProvider>(context, listen: false);
+      final signalingUrl = settingsProvider.settings?.webrtcServerUrl ?? '';
+      
+      debugPrint('=== WEBRTC VOICE CALL DEBUG ===');
+      debugPrint('Final Signaling URL: "$signalingUrl"');
+      debugPrint('URL Empty: ${signalingUrl.isEmpty}');
+      debugPrint('=== END DEBUG ===');
+      
       // Initialize WebRTC for voice call
       await _webrtcService!.initialize(
         isVideoCall: false,
         roomId: roomId,
         userId: userId,
+        signalingUrl: signalingUrl,
       );
 
       // Start audio visualization
