@@ -24,6 +24,9 @@ class CallEngineSelector {
       
       debugPrint('🔧 Call service type from settings: $callServiceType');
       
+      debugPrint('🔧 ENGINE: $callServiceType');
+      debugPrint('🌐 WEBRTC URL: ${settings?.webrtcServerUrl}');
+      
       switch (callServiceType) {
         case 'webrtc':
         case 'custom':

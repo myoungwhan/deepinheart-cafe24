@@ -51,6 +51,7 @@ class WebRTCService {
     required bool isVideoCall,
     required String roomId,
     required String userId,
+    required String signalingUrl,
   }) async {
     try {
       // Dispose any existing state before initializing
@@ -65,7 +66,11 @@ class WebRTCService {
       debugPrint('   - User ID: $userId');
       debugPrint('   - Video Call: $isVideoCall');
 
+<<<<<<< HEAD
+      await _initializeSignalingClient(signalingUrl);
+=======
       await _initializeSignalingClient(context);
+>>>>>>> 9249cb6cbfe4fbdb536f4c28cb54479b09724ba7
       await _createPeerConnection();
       await _getUserMedia();
 
@@ -82,6 +87,14 @@ class WebRTCService {
     }
   }
 
+<<<<<<< HEAD
+  Future<void> _initializeSignalingClient(String signalingUrl) async {
+    debugPrint('🚨 FINAL SIGNALING URL: $signalingUrl');
+
+    if (signalingUrl.isEmpty) {
+      throw Exception("WebRTC server not configured");
+    }
+=======
   Future<void> _resetState() async {
     debugPrint('🧹 Resetting WebRTC service state...');
     
@@ -139,6 +152,7 @@ class WebRTCService {
     final cleanUrl = signalingUrl.trim().replaceAll(RegExp(r'/+$'), '');
     debugPrint('🔧 Cleaned WebRTC URL: $cleanUrl');
     debugPrint('🚀 Connecting to WebRTC signaling server...');
+>>>>>>> 9249cb6cbfe4fbdb536f4c28cb54479b09724ba7
 
     _signalingClient = SignalingClient();
     

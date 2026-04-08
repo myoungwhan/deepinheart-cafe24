@@ -18,9 +18,10 @@
   "author": "DeepInHeart Team",
   "license": "MIT",
   "dependencies": {
-    "socket.io": "^4.7.5",
     "cors": "^2.8.5",
-    "helmet": "^7.1.0"
+    "express": "^5.2.1",
+    "helmet": "^7.1.0",
+    "socket.io": "^4.7.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
