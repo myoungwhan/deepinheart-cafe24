@@ -120,8 +120,8 @@ class SettingsData {
   final String callServiceType;
   final String agoraAppId;
   final String agoraAppCertificate;
-  final String mediaServerUrl;
-  final String mediaServerApiKey;
+  final String webrtcServerUrl;
+  final String webrtcServerApiKey;
 
   // Policy Links
   final String privacyPolicyLink;
@@ -210,8 +210,8 @@ class SettingsData {
     required this.callServiceType,
     required this.agoraAppId,
     required this.agoraAppCertificate,
-    required this.mediaServerUrl,
-    required this.mediaServerApiKey,
+    required this.webrtcServerUrl,
+    required this.webrtcServerApiKey,
     required this.privacyPolicyLink,
     required this.termsOfUseLink,
     required this.marketingInfoLink,
@@ -316,8 +316,8 @@ class SettingsData {
       callServiceType: json['call_service_type']?.toString() ?? '',
       agoraAppId: json['agora_app_id']?.toString() ?? '',
       agoraAppCertificate: json['agora_app_certificate']?.toString() ?? '',
-      mediaServerUrl: json['media_server_url']?.toString() ?? '',
-      mediaServerApiKey: json['media_server_api_key']?.toString() ?? '',
+      webrtcServerUrl: json['media_server_url']?.toString() ?? '',
+      webrtcServerApiKey: json['media_server_api_key']?.toString() ?? '',
       privacyPolicyLink: json['privacy_policy_link']?.toString() ?? '',
       termsOfUseLink: json['terms_of_use_link']?.toString() ?? '',
       marketingInfoLink: json['marketing_info_link']?.toString() ?? '',
