@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:deepinheart/config/webrtc_config.dart';
 import 'package:deepinheart/services/signaling_client.dart';
-import 'package:deepinheart/Controller/Viewmodel/setting_provider.dart';
-import 'package:provider/provider.dart';
 
 enum WebRTCConnectionState {
   disconnected,
@@ -46,6 +44,19 @@ class WebRTCService {
   bool _isVideoCall = true;
   bool get isVideoCall => _isVideoCall;
 
+  bool _isDisposed = false;
+
+  void _safeAddConnectionState(WebRTCConnectionState state) {
+    if (_isDisposed || _connectionStateController.isClosed) return;
+    _currentState = state;
+    _connectionStateController.add(state);
+  }
+
+  void _safeAddError(String error) {
+    if (_isDisposed || _errorController.isClosed) return;
+    _errorController.add(error);
+  }
+
   Future<void> initialize({
     required BuildContext context,
     required bool isVideoCall,
@@ -54,6 +65,7 @@ class WebRTCService {
     required String signalingUrl,
   }) async {
     try {
+      debugPrint('=== WebRTC Service Initialization ===');
       // Dispose any existing state before initializing
       await _resetState();
       
@@ -65,32 +77,58 @@ class WebRTCService {
       debugPrint('   - Room: $roomId');
       debugPrint('   - User ID: $userId');
       debugPrint('   - Video Call: $isVideoCall');
+      debugPrint('   - Signaling URL: "$signalingUrl"');
 
+      if (signalingUrl.trim().isEmpty) {
+        throw Exception("WebRTC server URL is empty. Please configure it in the admin panel.");
+      }
 
-      await _initializeSignalingClient(signalingUrl);
-      await _initializeSignalingClient(context);
-
+      // Clean up URL and ensure it's ws/wss if needed, or just use as is if the client handles it
+      final cleanUrl = signalingUrl.trim().replaceAll(RegExp(r'/+$'), '');
+      
+      await _initializeSignalingClient(cleanUrl);
       await _createPeerConnection();
       await _getUserMedia();
 
-      _connectionStateController.add(WebRTCConnectionState.connected);
-      _currentState = WebRTCConnectionState.connected;
-      
-      debugPrint('✅ WebRTC service initialized successfully');
+      // Removed manual connected state - let onConnectionState handle it
+      debugPrint('✅ WebRTC service local components initialized');
       
     } catch (e) {
       debugPrint('❌ Failed to initialize WebRTC service: $e');
-      _errorController.add('Initialization failed: $e');
-      _connectionStateController.add(WebRTCConnectionState.failed);
-      _currentState = WebRTCConnectionState.failed;
+      _safeAddError('Initialization failed: $e');
+      _safeAddConnectionState(WebRTCConnectionState.failed);
+      rethrow;
     }
   }
-  Future<void> _initializeSignalingClient(String signalingUrl) async {
-    debugPrint('🚨 FINAL SIGNALING URL: $signalingUrl');
 
-    if (signalingUrl.isEmpty) {
-      throw Exception("WebRTC server not configured");
+  Future<void> _initializeSignalingClient(String signalingUrl) async {
+    debugPrint('🚀 Connecting to WebRTC signaling server: $signalingUrl');
+
+    _signalingClient = SignalingClient();
+    
+    // Listen for signaling messages before connecting
+    _signalingClient!.messageStream.listen(_handleSignalingMessage);
+    
+    bool joinAttempted = false;
+
+    _signalingClient!.connectedStream.listen((_) {
+      if (_roomId != null && !joinAttempted) {
+        debugPrint('✅ Signaling connected event. Joining room: $_roomId');
+        joinAttempted = true;
+        _signalingClient!.joinRoom(_roomId!);
+      }
+    });
+    
+    await _signalingClient!.connect(signalingUrl, _userId!);
+    
+    // Safety check: if already connected after await and not yet attempted
+    if (_signalingClient!.isConnected && _roomId != null && !joinAttempted) {
+      debugPrint('✅ Signaling already connected. Joining room: $_roomId');
+      joinAttempted = true;
+      await _signalingClient!.joinRoom(_roomId!);
     }
+  }
+
   Future<void> _resetState() async {
     debugPrint('🧹 Resetting WebRTC service state...');
     
@@ -126,48 +164,11 @@ class WebRTCService {
     debugPrint('✅ WebRTC service state reset');
   }
 
-  Future<void> _initializeSignalingClient(BuildContext context) async {
-    debugPrint('=== WebRTC Service Initialization ===');
-    
-    // Get WebRTC URL from settings - no fallback allowed
-    final settingsProvider = Provider.of<SettingProvider>(context, listen: false);
-    final signalingUrl = settingsProvider.settings?.mediaServerUrl;
-    
-    debugPrint('ð§ Settings loaded successfully: ${settingsProvider.hasSettings}');
-    debugPrint('ð§ Media Server URL from settings: "$signalingUrl"');
-
-    if (signalingUrl == null || signalingUrl.trim().isEmpty) {
-      debugPrint('â WebRTC URL is empty!');
-      debugPrint('ð§ Please configure WebRTC Server URL in admin panel');
-      throw Exception('WebRTC URL is not configured');
-    }
-
-    debugPrint('🚀 Using WebRTC URL: $signalingUrl');
-    
-    // Clean up URL to remove trailing slash
-    final cleanUrl = signalingUrl.trim().replaceAll(RegExp(r'/+$'), '');
-    debugPrint('🔧 Cleaned WebRTC URL: $cleanUrl');
-    debugPrint('🚀 Connecting to WebRTC signaling server...');
->>>>>>> 9249cb6cbfe4fbdb536f4c28cb54479b09724ba7
-
-    _signalingClient = SignalingClient();
-    
-    await _signalingClient!.connect(cleanUrl, _userId!);
-    
-    debugPrint('â WebRTC signaling client connected successfully');
-    
-    // Listen for signaling messages
-    _signalingClient!.messageStream.listen(_handleSignalingMessage);
-    _signalingClient!.connectedStream.listen((_) {
-      debugPrint('ð Joining room: $_roomId');
-      _signalingClient!.joinRoom(_roomId!);
-    });
-    
-    debugPrint('=== WebRTC Service Initialization Complete ===');
-  }
+  List<RTCIceCandidate> _remoteIceCandidatesQueue = [];
 
   Future<void> _createPeerConnection() async {
     final config = WebRTCConfig.getPeerConnectionConfig(null);
+    config['sdpSemantics'] = 'unified-plan';
 
     _peerConnection = await createPeerConnection(config);
     
@@ -178,41 +179,43 @@ class WebRTCService {
           _remoteUserId!,
           candidate.toMap(),
         );
+      } else {
+        debugPrint('⚠️ ICE candidate generated but _remoteUserId is null, candidate might be lost');
       }
     };
 
     _peerConnection!.onConnectionState = (RTCPeerConnectionState state) {
+      if (_isDisposed) return;
       debugPrint('🔗 Connection state: ${state.name}');
       switch (state) {
         case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
-          _connectionStateController.add(WebRTCConnectionState.connected);
-          _currentState = WebRTCConnectionState.connected;
+          _safeAddConnectionState(WebRTCConnectionState.connected);
           break;
         case RTCPeerConnectionState.RTCPeerConnectionStateDisconnected:
         case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
-          _connectionStateController.add(WebRTCConnectionState.failed);
-          _currentState = WebRTCConnectionState.failed;
+          _safeAddConnectionState(WebRTCConnectionState.failed);
           break;
         case RTCPeerConnectionState.RTCPeerConnectionStateConnecting:
-          _connectionStateController.add(WebRTCConnectionState.connecting);
-          _currentState = WebRTCConnectionState.connecting;
+          _safeAddConnectionState(WebRTCConnectionState.connecting);
           break;
         default:
           break;
       }
     };
 
-    _peerConnection!.onAddStream = (MediaStream stream) {
-      debugPrint('📹 Remote stream added');
-      _remoteStream = stream;
-      _remoteStreamController.add(stream);
+    _peerConnection!.onTrack = (RTCTrackEvent event) {
+      if (_isDisposed) return;
+      debugPrint('📹 Remote track added: ${event.track.kind}');
+      if (event.streams.isNotEmpty) {
+        _remoteStream = event.streams[0];
+        if (!_remoteStreamController.isClosed) {
+          _remoteStreamController.add(_remoteStream!);
+        }
+      }
     };
 
-    _peerConnection!.onRemoveStream = (MediaStream stream) {
-      debugPrint('📹 Remote stream removed');
-      if (_remoteStream?.id == stream.id) {
-        _remoteStream = null;
-      }
+    _peerConnection!.onRemoveTrack = (MediaStream stream, MediaStreamTrack track) {
+      debugPrint('📹 Remote track removed: ${track.kind}');
     };
 
     debugPrint('✅ Peer connection created');
@@ -226,10 +229,12 @@ class WebRTCService {
 
       _localStream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      // Add local stream to peer connection
-      await _peerConnection!.addStream(_localStream!);
+      // Add local tracks to peer connection
+      _localStream!.getTracks().forEach((track) {
+        _peerConnection!.addTrack(track, _localStream!);
+      });
       
-      debugPrint('✅ Local media stream obtained');
+      debugPrint('✅ Local media tracks added to peer connection');
       
     } catch (e) {
       debugPrint('❌ Failed to get user media: $e');
@@ -248,6 +253,7 @@ class WebRTCService {
         break;
         
       case SignalingEventType.offer:
+        _remoteUserId = message.from;
         await _handleOffer(message.data);
         break;
         
@@ -294,6 +300,12 @@ class WebRTCService {
       final offer = RTCSessionDescription(offerData['sdp'], 'offer');
       await _peerConnection!.setRemoteDescription(offer);
       
+      // Process queued candidates
+      for (var candidate in _remoteIceCandidatesQueue) {
+        await _peerConnection!.addCandidate(candidate);
+      }
+      _remoteIceCandidatesQueue.clear();
+
       // Create and send answer
       final answer = await _peerConnection!.createAnswer();
       await _peerConnection!.setLocalDescription(answer);
@@ -317,6 +329,12 @@ class WebRTCService {
       final answer = RTCSessionDescription(answerData['sdp'], 'answer');
       await _peerConnection!.setRemoteDescription(answer);
       
+      // Process queued candidates
+      for (var candidate in _remoteIceCandidatesQueue) {
+        await _peerConnection!.addCandidate(candidate);
+      }
+      _remoteIceCandidatesQueue.clear();
+      
       debugPrint('📨 Answer handled');
       
     } catch (e) {
@@ -335,18 +353,23 @@ class WebRTCService {
         candidateData['sdpMLineIndex'],
       );
       
-      await _peerConnection!.addCandidate(candidate);
-      debugPrint('📨 ICE candidate added');
+      if (_peerConnection!.getRemoteDescription() != null) {
+        await _peerConnection!.addCandidate(candidate);
+        debugPrint('📨 ICE candidate added immediately');
+      } else {
+        _remoteIceCandidatesQueue.add(candidate);
+        debugPrint('📨 ICE candidate queued (remote description not set yet)');
+      }
       
     } catch (e) {
       debugPrint('❌ Failed to add ICE candidate: $e');
-      _errorController.add('Failed to add ICE candidate: $e');
+      _safeAddError('Failed to add ICE candidate: $e');
     }
   }
 
   // Media controls
   Future<void> toggleMicrophone() async {
-    if (_localStream == null) return;
+    if (_localStream == null || _isDisposed) return;
 
     final audioTrack = _localStream!.getAudioTracks().first;
     audioTrack.enabled = !audioTrack.enabled;
@@ -387,15 +410,16 @@ class WebRTCService {
   }
 
   Future<void> dispose() async {
+    if (_isDisposed) return;
+    _isDisposed = true;
+    
     debugPrint('🗑️ Disposing WebRTC service...');
 
-    _connectionStateController.add(WebRTCConnectionState.disconnected);
-    _currentState = WebRTCConnectionState.disconnected;
-
+    _safeAddConnectionState(WebRTCConnectionState.disconnected);
+    
     // Stop local stream
     if (_localStream != null) {
       for (final track in _localStream!.getTracks()) {
-        // `stop()` doesn't return a Future in flutter_webrtc
         track.stop();
       }
       await _localStream!.dispose();
@@ -422,9 +446,9 @@ class WebRTCService {
     _userId = null;
 
     // Close stream controllers
-    await _remoteStreamController.close();
-    await _connectionStateController.close();
-    await _errorController.close();
+    if (!_remoteStreamController.isClosed) await _remoteStreamController.close();
+    if (!_connectionStateController.isClosed) await _connectionStateController.close();
+    if (!_errorController.isClosed) await _errorController.close();
 
     debugPrint('✅ WebRTC service disposed');
   }

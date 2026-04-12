@@ -44,26 +44,25 @@ class WebRTCConfig {
 
   // Media constraints for video calls
   static const Map<String, dynamic> videoConstraints = {
-    'mandatory': {
-      'minWidth': '320',
-      'minHeight': '240',
-      'maxWidth': '1280',
-      'maxHeight': '720',
-    },
-    'optional': [
-      {'minFrameRate': 15},
-      {'maxFrameRate': 30},
-    ],
+    'audio': true,
+    'video': {
+      'mandatory': {
+        'minWidth': '320',
+        'minHeight': '240',
+        'maxWidth': '1280',
+        'maxHeight': '720',
+      },
+      'optional': [
+        {'minFrameRate': 15},
+        {'maxFrameRate': 30},
+      ],
+    }
   };
 
   // Media constraints for voice calls
   static const Map<String, dynamic> audioConstraints = {
-    'mandatory': {},
-    'optional': [
-      {'echoCancellation': true},
-      {'noiseSuppression': true},
-      {'autoGainControl': true},
-    ],
+    'audio': true,
+    'video': false,
   };
 
   // Peer connection configuration

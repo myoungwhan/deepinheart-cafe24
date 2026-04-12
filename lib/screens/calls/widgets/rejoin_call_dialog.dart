@@ -1,5 +1,4 @@
-import 'package:deepinheart/screens/calls/video_call_screen.dart';
-import 'package:deepinheart/screens/calls/voice_call_screen.dart';
+import 'package:deepinheart/utils/call_engine_selector.dart';
 import 'package:deepinheart/services/call_state_manager.dart';
 import 'package:deepinheart/views/colors.dart';
 import 'package:deepinheart/views/custom_text.dart';
@@ -174,32 +173,28 @@ class RejoinCallDialog extends StatelessWidget {
 
     // Navigate to appropriate call screen
     if (callType == 'video') {
-      Get.to(
-        () => VideoCallScreen(
-          counslername: counselorName,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate,
-          appointmentId: appointmentId,
-          counselorId: counselorId,
-          counselorImage: counselorImage,
-          isCounsler: isCounselor,
-          isTroat: isTroat,
-        ),
+      CallEngineSelector.navigateToVideoCall(
+        counselorName: counselorName,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointmentId,
+        counselorId: counselorId,
+        counselorImage: counselorImage,
+        isCounselor: isCounselor,
+        isTroat: isTroat,
       );
     } else {
-      Get.to(
-        () => VoiceCallScreen(
-          counslername: counselorName,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate,
-          appointmentId: appointmentId,
-          counselorId: counselorId,
-          counselorImage: counselorImage,
-          isCounselor: isCounselor,
-          isTroat: isTroat,
-        ),
+      CallEngineSelector.navigateToVoiceCall(
+        counselorName: counselorName,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointmentId,
+        counselorId: counselorId,
+        counselorImage: counselorImage,
+        isCounselor: isCounselor,
+        isTroat: isTroat,
       );
     }
 

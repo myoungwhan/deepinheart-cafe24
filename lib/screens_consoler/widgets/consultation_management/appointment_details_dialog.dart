@@ -2,8 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:deepinheart/Controller/Viewmodel/counselor_appointment_provider.dart';
 import 'package:deepinheart/config/agora_config.dart';
 import 'package:deepinheart/screens/calls/chat_screen.dart';
-import 'package:deepinheart/screens/calls/video_call_screen.dart';
-import 'package:deepinheart/screens/calls/voice_call_screen.dart';
+import 'package:deepinheart/utils/call_engine_selector.dart';
 import 'package:deepinheart/screens_consoler/models/appointment_model.dart';
 import 'package:deepinheart/views/colors.dart';
 import 'package:deepinheart/views/custom_text.dart';
@@ -65,28 +64,24 @@ class _AppointmentDetailsDialogState extends State<AppointmentDetailsDialog>
     Get.back(); // Close dialog first
 
     if (widget.appointment.method.toLowerCase() == 'video_call') {
-      Get.to(
-        () => VideoCallScreen(
-          counslername: clientName,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate,
-          appointmentId: widget.appointment.id,
-          isCounsler: true,
-          isTroat: widget.appointment.isTroat,
-        ),
+      CallEngineSelector.navigateToVideoCall(
+        counselorName: clientName,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: widget.appointment.id,
+        isCounselor: true,
+        isTroat: widget.appointment.isTroat,
       );
     } else if (widget.appointment.method.toLowerCase() == 'voice_call') {
-      Get.to(
-        () => VoiceCallScreen(
-          isCounselor: true,
-          counslername: clientName,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate,
-          appointmentId: widget.appointment.id,
-          isTroat: widget.appointment.isTroat,
-        ),
+      CallEngineSelector.navigateToVoiceCall(
+        counselorName: clientName,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: widget.appointment.id,
+        isCounselor: true,
+        isTroat: widget.appointment.isTroat,
       );
     } else if (widget.appointment.method.toLowerCase() == 'chat') {
       Get.to(

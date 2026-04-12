@@ -11,8 +11,7 @@ import 'package:deepinheart/config/agora_config.dart';
 import 'package:deepinheart/config/api_endpoints.dart';
 import 'package:deepinheart/config/string_constants.dart';
 import 'package:deepinheart/screens/calls/chat_screen.dart';
-import 'package:deepinheart/screens/calls/video_call_screen.dart';
-import 'package:deepinheart/screens/calls/voice_call_screen.dart';
+import 'package:deepinheart/utils/call_engine_selector.dart';
 import 'package:deepinheart/screens_consoler/models/appointment_model.dart';
 import 'package:deepinheart/screens_consoler/widgets/consultation_management/appointment_details_dialog.dart';
 import 'package:deepinheart/views/colors.dart';
@@ -172,29 +171,25 @@ class _ConsultaionCardviewState extends State<ConsultaionCardview>
 
     // Navigate based on consultation method
     if (appointment.method.toLowerCase() == 'video_call') {
-      await Get.to(
-        () => VideoCallScreen(
-          counslername: clientName,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate,
-          appointmentId: appointment.id, // Pass appointment ID for coin updates
-          isCounsler: true,
-          isTroat: appointment.isTroat,
-        ),
+      await CallEngineSelector.navigateToVideoCall(
+        counselorName: clientName,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointment.id,
+        isCounselor: true,
+        isTroat: appointment.isTroat,
       );
       _refreshAppointmentsSilently();
     } else if (appointment.method.toLowerCase() == 'voice_call') {
-      await Get.to(
-        () => VoiceCallScreen(
-          isCounselor: true,
-          counslername: clientName,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate,
-          appointmentId: appointment.id, // Pass appointment ID for coin updates
-          isTroat: appointment.isTroat,
-        ),
+      await CallEngineSelector.navigateToVoiceCall(
+        counselorName: clientName,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointment.id,
+        isCounselor: true,
+        isTroat: appointment.isTroat,
       );
 
       _refreshAppointmentsSilently();
@@ -213,16 +208,14 @@ class _ConsultaionCardviewState extends State<ConsultaionCardview>
       _refreshAppointmentsSilently();
     } else {
       // Default to video call
-      await Get.to(
-        () => VideoCallScreen(
-          counslername: clientName,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate,
-          appointmentId: appointment.id, // Pass appointment ID for coin updates
-          isCounsler: true,
-          isTroat: appointment.isTroat,
-        ),
+      await CallEngineSelector.navigateToVideoCall(
+        counselorName: clientName,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointment.id,
+        isCounselor: true,
+        isTroat: appointment.isTroat,
       );
       _refreshAppointmentsSilently();
     }

@@ -49,8 +49,8 @@ class SignalingMessage {
       ),
       data: json['data'] ?? {},
       room: json['room'] ?? '',
-      from: json['from'],
-      to: json['to'],
+      from: json['from']?.toString() ?? json['userId']?.toString(),
+      to: json['to']?.toString(),
     );
   }
 }
@@ -83,10 +83,20 @@ class SignalingClient {
     try {
       _userId = userId;
       
-      debugPrint('🔌 Connecting to signaling server: $signalingUrl');
+      debugPrint('[SIG] 🔌 Connecting to signaling server: $signalingUrl');
+
+      // Convert ws:// to http:// if needed for better socket.io compatibility
+      String url = signalingUrl;
+      if (url.startsWith('ws://')) {
+        url = url.replaceFirst('ws://', 'http://');
+      } else if (url.startsWith('wss://')) {
+        url = url.replaceFirst('wss://', 'https://');
+      }
       
+      debugPrint('[SIG] 🔌 Attempting connection to: $url with transports: [\'websocket\']');
+
       _socket = IO.io(
-        signalingUrl,
+        url,
         IO.OptionBuilder()
             .setTransports(['websocket'])
             .enableAutoConnect()
@@ -97,14 +107,29 @@ class SignalingClient {
       );
 
       _setupEventListeners();
+
+      _socket?.connect();
       
-      await _socket?.connect();
-      
-      debugPrint('✅ Connected to signaling server');
-      _connectedController.add(null);
+      debugPrint('[SIG] ⏳ Waiting for socket connection...');
+      // Wait for connection with timeout
+      int attempts = 0;
+      while (!isConnected && attempts < 50) { // 10 seconds total
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (attempts % 10 == 0) {
+          debugPrint('[SIG]   ...still waiting (${attempts * 0.2}s), connected: $isConnected');
+        }
+        attempts++;
+      }
+
+      if (isConnected) {
+        debugPrint('[SIG] ✅ Connected to signaling server');
+        _connectedController.add(null);
+      } else {
+        debugPrint('[SIG] ⚠️ Connection timeout, but proceeding...');
+      }
       
     } catch (e) {
-      debugPrint('❌ Failed to connect to signaling server: $e');
+      debugPrint('[SIG] ❌ Failed to connect to signaling server: $e');
       _errorController.add('Connection failed: $e');
     }
   }
@@ -112,62 +137,67 @@ class SignalingClient {
   void _setupEventListeners() {
     if (_socket == null) return;
 
+    // Raw event logger for debugging
+    _socket!.onAny((event, data) {
+      debugPrint('[SIG] [RAW EVENT] $event: $data');
+    });
+
     _socket!.onConnect((_) {
-      debugPrint('✅ Socket connected');
+      debugPrint('[SIG] ✅ Socket connected successfully! ID: ${_socket?.id}');
       _connectedController.add(null);
     });
 
-    _socket!.onDisconnect((_) {
-      debugPrint('❌ Socket disconnected');
+    _socket!.onDisconnect((reason) {
+      debugPrint('[SIG] ❌ Socket disconnected. Reason: $reason');
       _disconnectedController.add(null);
     });
 
     _socket!.onConnectError((error) {
-      debugPrint('❌ Socket connection error: $error');
+      debugPrint('[SIG] ❌ Socket connection error detail: $error');
       _errorController.add('Connection error: $error');
     });
 
+    _socket!.on('connect_timeout', (data) {
+      debugPrint('[SIG] ❌ Socket connection timeout: $data');
+    });
+
     _socket!.onError((error) {
-      debugPrint('❌ Socket error: $error');
+      debugPrint('[SIG] ❌ Socket error: $error');
       _errorController.add('Socket error: $error');
     });
 
     _socket!.on('message', (data) {
       try {
         final message = SignalingMessage.fromJson(data);
-        debugPrint('📨 Received signaling message: ${message.type.name}');
+        debugPrint('[SIG] 📨 Received message from ${message.from}: ${message.type.name}');
         _messageController.add(message);
       } catch (e) {
-        debugPrint('❌ Failed to parse signaling message: $e');
+        debugPrint('[SIG] ❌ Failed to parse message: $e');
       }
     });
 
     _socket!.on('room-joined', (data) {
-      debugPrint('🏠 Joined room: ${data['room']}');
-    });
-
-    _socket!.on('room-left', (data) {
-      debugPrint('🚪 Left room: ${data['room']}');
+      debugPrint('[SIG] 🏠 Room joined successfully: ${data['room']}');
     });
 
     _socket!.on('user-joined', (data) {
-      debugPrint('👤 User joined room: ${data['userId']}');
+      debugPrint('[SIG] 👤 Remote user joined: ${data['userId']}');
       final message = SignalingMessage(
         type: SignalingEventType.userJoined,
         data: data,
         room: _currentRoom ?? '',
-        from: data['userId'],
+        from: data['userId']?.toString(),
       );
       _messageController.add(message);
     });
 
     _socket!.on('user-left', (data) {
-      debugPrint('👋 User left room: ${data['userId']}');
+      debugPrint('[SIG] 👋 User left room: ${data['userId']}');
       final message = SignalingMessage(
         type: SignalingEventType.userLeft,
         data: data,
         room: _currentRoom ?? '',
-        from: data['userId'],
+        from: data['userId']?.toString(),
       );
       _messageController.add(message);
     });
@@ -180,34 +210,25 @@ class SignalingClient {
 
     _currentRoom = roomId;
     
-    final message = SignalingMessage(
-      type: SignalingEventType.join,
-      data: {
-        'userId': _userId,
-        'room': roomId,
-      },
-      room: roomId,
-      from: _userId,
-    );
+    // Server expects exactly { room: string, userId: string }
+    final joinData = {
+      'room': roomId,
+      'userId': _userId?.toString(),
+    };
 
-    _socket?.emit('join-room', message.toJson());
-    debugPrint('🏠 Joining room: $roomId');
+    _socket?.emit('join-room', joinData);
+    debugPrint('🏠 Joining room: $roomId with userId: $_userId');
   }
 
   Future<void> leaveRoom() async {
     if (!isConnected || _currentRoom == null) return;
 
-    final message = SignalingMessage(
-      type: SignalingEventType.leave,
-      data: {
-        'userId': _userId,
-        'room': _currentRoom,
-      },
-      room: _currentRoom!,
-      from: _userId,
-    );
+    final leaveData = {
+      'room': _currentRoom,
+      'userId': _userId?.toString(),
+    };
 
-    _socket?.emit('leave-room', message.toJson());
+    _socket?.emit('leave-room', leaveData);
     debugPrint('🚪 Leaving room: $_currentRoom');
     
     _currentRoom = null;
@@ -218,15 +239,15 @@ class SignalingClient {
       throw Exception('Not connected to room');
     }
 
-    final message = SignalingMessage(
-      type: SignalingEventType.offer,
-      data: offer,
-      room: _currentRoom!,
-      from: _userId,
-      to: targetUserId,
-    );
+    final messageData = {
+      'type': SignalingEventType.offer.name,
+      'data': offer,
+      'room': _currentRoom!,
+      'from': _userId,
+      'to': targetUserId.toString(),
+    };
 
-    _socket?.emit('send-message', message.toJson());
+    _socket?.emit('send-message', messageData);
     debugPrint('📤 Sending offer to: $targetUserId');
   }
 
@@ -235,15 +256,15 @@ class SignalingClient {
       throw Exception('Not connected to room');
     }
 
-    final message = SignalingMessage(
-      type: SignalingEventType.answer,
-      data: answer,
-      room: _currentRoom!,
-      from: _userId,
-      to: targetUserId,
-    );
+    final messageData = {
+      'type': SignalingEventType.answer.name,
+      'data': answer,
+      'room': _currentRoom!,
+      'from': _userId,
+      'to': targetUserId.toString(),
+    };
 
-    _socket?.emit('send-message', message.toJson());
+    _socket?.emit('send-message', messageData);
     debugPrint('📤 Sending answer to: $targetUserId');
   }
 
@@ -252,15 +273,15 @@ class SignalingClient {
       throw Exception('Not connected to room');
     }
 
-    final message = SignalingMessage(
-      type: SignalingEventType.iceCandidate,
-      data: candidate,
-      room: _currentRoom!,
-      from: _userId,
-      to: targetUserId,
-    );
+    final messageData = {
+      'type': SignalingEventType.iceCandidate.name,
+      'data': candidate,
+      'room': _currentRoom!,
+      'from': _userId,
+      'to': targetUserId.toString(),
+    };
 
-    _socket?.emit('send-message', message.toJson());
+    _socket?.emit('send-message', messageData);
     debugPrint('📤 Sending ICE candidate to: $targetUserId');
   }
 

@@ -23,20 +23,15 @@ class CallEngineSelector {
       final callServiceType = settings?.callServiceType.toLowerCase() ?? 'agora';
       
       debugPrint('🔧 Call service type from settings: $callServiceType');
-      
-      debugPrint('🔧 ENGINE: $callServiceType');
       debugPrint('🌐 WEBRTC URL: ${settings?.webrtcServerUrl}');
       
-      switch (callServiceType) {
-        case 'webrtc':
-        case 'custom':
-          debugPrint('🔧 Using WebRTC engine');
+      if (callServiceType == 'webrtc' || callServiceType == 'custom') {
+          debugPrint('🔧 Using WebRTC engine (Source: $callServiceType)');
           return CallEngine.webrtc;
-        case 'agora':
-        default:
-          debugPrint('🔧 Using Agora engine');
-          return CallEngine.agora;
       }
+      
+      debugPrint('🔧 Using Agora engine (Fallback/Default)');
+      return CallEngine.agora;
     } catch (e) {
       debugPrint('❌ Failed to get call engine, defaulting to Agora: $e');
       return CallEngine.agora;
@@ -54,6 +49,14 @@ class CallEngineSelector {
     bool isCounselor = false,
     bool isTroat = false,
   }) async {
+    // Refresh settings before deciding which engine to use
+    try {
+      final settingsProvider = Provider.of<SettingProvider>(Get.context!, listen: false);
+      await settingsProvider.fetchSettings(Get.context!);
+    } catch (e) {
+      debugPrint('⚠️ Failed to refresh settings before video call: $e');
+    }
+
     final engine = getCurrentEngine();
     
     debugPrint('🚀 Navigating to video call with engine: ${engine.name}');
@@ -105,6 +108,14 @@ class CallEngineSelector {
     bool isCounselor = false,
     bool isTroat = false,
   }) async {
+    // Refresh settings before deciding which engine to use
+    try {
+      final settingsProvider = Provider.of<SettingProvider>(Get.context!, listen: false);
+      await settingsProvider.fetchSettings(Get.context!);
+    } catch (e) {
+      debugPrint('⚠️ Failed to refresh settings before voice call: $e');
+    }
+
     final engine = getCurrentEngine();
     
     debugPrint('🚀 Navigating to voice call with engine: ${engine.name}');

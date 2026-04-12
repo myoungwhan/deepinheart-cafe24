@@ -10,8 +10,7 @@ import 'package:deepinheart/config/agora_config.dart';
 import 'package:deepinheart/config/string_constants.dart';
 import 'package:deepinheart/main.dart';
 import 'package:deepinheart/screens/calls/chat_screen.dart';
-import 'package:deepinheart/screens/calls/video_call_screen.dart';
-import 'package:deepinheart/screens/calls/voice_call_screen.dart';
+import 'package:deepinheart/utils/call_engine_selector.dart';
 import 'package:deepinheart/screens/counselor/tabsview/consulation_tab_view.dart';
 import 'package:deepinheart/screens/counselor/tabsview/profile_tab_view.dart';
 import 'package:deepinheart/screens/counselor/tabsview/rating_tab_view.dart';
@@ -465,11 +464,11 @@ class _CounselorDetailScreenState extends State<CounselorDetailScreen>
   }
 
   // Start immediate consultation
-  void _startImmediateConsultation(
+  Future<void> _startImmediateConsultation(
     ConsulationTabViewState state,
     String channelName,
     int? appointmentId, // Add appointment ID parameter
-  ) {
+  ) async {
     // Get the selected consultation method
     if (state.selectedMethodIndex < 0 ||
         state.selectedMethodIndex >= state.options.length) {
@@ -523,49 +522,37 @@ class _CounselorDetailScreenState extends State<CounselorDetailScreen>
 
     // Navigate to appropriate call screen based on method
     if (selectedMethod.contains('Video') || selectedMethod.contains('비디오')) {
-      Get.to(
-        () => VideoCallScreen(
-          counslername:
-              widget.model.nickName.isNotEmpty
-                  ? widget.model.nickName
-                  : widget.model.name,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate, // Pass the rate!
-          appointmentId: appointmentId, // Pass appointment ID for coin updates
-          counselorId:
-              widget.model.id, // Pass counselor ID for complete-appointment API
-          counselorImage:
-              widget
-                  .model
-                  .profileImage, // Pass counselor image for rating dialog
-          isCounsler: false,
-          isTroat: isTroat,
-        ),
+      await CallEngineSelector.navigateToVideoCall(
+        counselorName:
+            widget.model.nickName.isNotEmpty
+                ? widget.model.nickName
+                : widget.model.name,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointmentId,
+        counselorId: widget.model.id,
+        counselorImage: widget.model.profileImage,
+        isCounselor: false,
+        isTroat: isTroat,
       );
     } else if (selectedMethod.contains('Phone') ||
         selectedMethod.contains('Voice') ||
         selectedMethod.contains('음성') ||
         selectedMethod.contains('전화')) {
-      Get.to(
-        () => VoiceCallScreen(
-          isCounselor: false,
-          counslername:
-              widget.model.nickName.isNotEmpty
-                  ? widget.model.nickName
-                  : widget.model.name,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate, // Pass the rate!
-          appointmentId: appointmentId, // Pass appointment ID for coin updates
-          counselorId:
-              widget.model.id, // Pass counselor ID for complete-appointment API
-          counselorImage:
-              widget
-                  .model
-                  .profileImage, // Pass counselor image for rating dialog
-          isTroat: isTroat,
-        ),
+      await CallEngineSelector.navigateToVoiceCall(
+        counselorName:
+            widget.model.nickName.isNotEmpty
+                ? widget.model.nickName
+                : widget.model.name,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointmentId,
+        counselorId: widget.model.id,
+        counselorImage: widget.model.profileImage,
+        isCounselor: false,
+        isTroat: isTroat,
       );
     } else if (selectedMethod.contains('Chat') ||
         selectedMethod.contains('채팅') ||
@@ -588,25 +575,19 @@ class _CounselorDetailScreenState extends State<CounselorDetailScreen>
       );
     } else {
       // Default to video call if method is unclear
-      Get.to(
-        () => VideoCallScreen(
-          counslername:
-              widget.model.nickName.isNotEmpty
-                  ? widget.model.nickName
-                  : widget.model.name,
-          channelName: channelName,
-          userId: userId,
-          counselorRate: counselorRate, // Pass the rate!
-          appointmentId: appointmentId, // Pass appointment ID for coin updates
-          counselorId:
-              widget.model.id, // Pass counselor ID for complete-appointment API
-          counselorImage:
-              widget
-                  .model
-                  .profileImage, // Pass counselor image for rating dialog
-          isCounsler: false,
-          isTroat: isTroat,
-        ),
+      await CallEngineSelector.navigateToVideoCall(
+        counselorName:
+            widget.model.nickName.isNotEmpty
+                ? widget.model.nickName
+                : widget.model.name,
+        channelName: channelName,
+        userId: userId,
+        counselorRate: counselorRate,
+        appointmentId: appointmentId,
+        counselorId: widget.model.id,
+        counselorImage: widget.model.profileImage,
+        isCounselor: false,
+        isTroat: isTroat,
       );
     }
   }

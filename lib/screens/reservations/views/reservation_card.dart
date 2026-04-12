@@ -7,8 +7,7 @@ import 'package:deepinheart/Controller/Viewmodel/userviewmodel.dart';
 import 'package:deepinheart/config/agora_config.dart';
 import 'package:deepinheart/config/api_endpoints.dart';
 import 'package:deepinheart/screens/calls/chat_screen.dart';
-import 'package:deepinheart/screens/calls/video_call_screen.dart';
-import 'package:deepinheart/screens/calls/voice_call_screen.dart';
+import 'package:deepinheart/utils/call_engine_selector.dart';
 import 'package:deepinheart/screens/home/widget/sub_category_chip.dart';
 import 'package:deepinheart/screens/reservations/views/cancel_reservation_dialog.dart';
 import 'package:deepinheart/screens/reservations/views/reservation_details_dialog.dart';
@@ -799,30 +798,26 @@ class _ReservationCardState extends State<ReservationCard>
 
     // Navigate to appropriate call screen based on method
     if (res.method.contains('Video')) {
-      await Get.to(
-        () => VideoCallScreen(
-          counslername: appointment!.counselor.name,
-          channelName: channelName,
-          userId: userId,
-          appointmentId: appointment!.id,
-          counselorId: appointment!.counselor.id,
-          counselorImage: appointment!.counselor.image,
-          isCounsler: false,
-          isTroat: appointment!.isTroat,
-        ),
+      await CallEngineSelector.navigateToVideoCall(
+        counselorName: appointment!.counselor.name,
+        channelName: channelName,
+        userId: userId,
+        appointmentId: appointment!.id,
+        counselorId: appointment!.counselor.id,
+        counselorImage: appointment!.counselor.image,
+        isCounselor: false,
+        isTroat: appointment!.isTroat,
       );
     } else if (res.method.contains('Phone') || res.method.contains('Voice')) {
-      Get.to(
-        () => VoiceCallScreen(
-          isCounselor: false,
-          counslername: appointment!.counselor.name,
-          channelName: channelName,
-          userId: userId,
-          appointmentId: appointment!.id,
-          counselorId: appointment!.counselor.id,
-          counselorImage: appointment!.counselor.image,
-          isTroat: appointment!.isTroat,
-        ),
+      await CallEngineSelector.navigateToVoiceCall(
+        counselorName: appointment!.counselor.name,
+        channelName: channelName,
+        userId: userId,
+        appointmentId: appointment!.id,
+        counselorId: appointment!.counselor.id,
+        counselorImage: appointment!.counselor.image,
+        isCounselor: false,
+        isTroat: appointment!.isTroat,
       );
     } else if (res.method.contains('Chat')) {
       await Get.to(
@@ -849,17 +844,15 @@ class _ReservationCardState extends State<ReservationCard>
       }
     } else {
       // Default to video call
-      Get.to(
-        () => VideoCallScreen(
-          counslername: appointment!.counselor.name,
-          channelName: channelName,
-          userId: userId,
-          appointmentId: appointment!.id,
-          counselorId: appointment!.counselor.id,
-          counselorImage: appointment!.counselor.image,
-          isCounsler: false,
-          isTroat: appointment!.isTroat,
-        ),
+      await CallEngineSelector.navigateToVideoCall(
+        counselorName: appointment!.counselor.name,
+        channelName: channelName,
+        userId: userId,
+        appointmentId: appointment!.id,
+        counselorId: appointment!.counselor.id,
+        counselorImage: appointment!.counselor.image,
+        isCounselor: false,
+        isTroat: appointment!.isTroat,
       );
     }
   }
