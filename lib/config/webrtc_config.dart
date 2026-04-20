@@ -1,11 +1,14 @@
+import 'dart:io';
+
 class WebRTCConfig {
-  // STUN servers for NAT traversal
+  // STUN and TURN servers for NAT traversal
   static const List<Map<String, dynamic>> iceServers = [
     {'urls': 'stun:stun.l.google.com:19302'},
-    {'urls': 'stun:stun1.l.google.com:19302'},
-    {'urls': 'stun:stun2.l.google.com:19302'},
-    {'urls': 'stun:stun3.l.google.com:19302'},
-    {'urls': 'stun:stun4.l.google.com:19302'},
+    {
+      'urls': 'turn:158.247.241.227:3478',
+      'username': 'test',
+      'credential': '1234',
+    },
   ];
 
   // TURN servers (optional - configure in backend settings)
@@ -42,19 +45,25 @@ class WebRTCConfig {
     }
   }
 
-  // Media constraints for video calls
+  // Media constraints for video calls - Optimized for Agora-like quality
   static const Map<String, dynamic> videoConstraints = {
-    'audio': true,
+    'audio': {
+      'echoCancellation': true,
+      'noiseSuppression': true,
+      'autoGainControl': true,
+    },
     'video': {
       'mandatory': {
-        'minWidth': '320',
-        'minHeight': '240',
-        'maxWidth': '1280',
-        'maxHeight': '720',
+        'minWidth': '640',
+        'minHeight': '480',
+        'maxWidth': '1920',
+        'maxHeight': '1080',
+        'minFrameRate': '24',
       },
+      'facingMode': 'user',
       'optional': [
-        {'minFrameRate': 15},
-        {'maxFrameRate': 30},
+        {'googCpuOveruseDetection': true},
+        {'googHighStartBitrate': 1000},
       ],
     }
   };
@@ -68,11 +77,52 @@ class WebRTCConfig {
   // Peer connection configuration
   static Map<String, dynamic> getPeerConnectionConfig(String? turnConfig) {
     return {
-      'iceServers': [...iceServers, ...getTurnServers(turnConfig)],
-      'iceCandidatePoolSize': 10,
+      'iceServers': [...iceServers, ...getTurnServers(turnConfig), ...getPublicTurnServers()],
+      'iceCandidatePoolSize': 20,
+      'iceTransportPolicy': 'all',
       'bundlePolicy': 'max-bundle',
       'rtcpMuxPolicy': 'require',
     };
+  }
+
+  // Public TURN servers for fallback
+  static List<Map<String, dynamic>> getPublicTurnServers() {
+    return [
+      {
+        'urls': 'turn:openrelay.metered.ca:80',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+      {
+        'urls': 'turn:openrelay.metered.ca:443',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+    ];
+  }
+
+  // Network connectivity test
+  static Future<bool> testConnectivity() async {
+    try {
+      // Test STUN server connectivity
+      final result = await InternetAddress.lookup('stun.l.google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get optimal configuration based on network conditions
+  static Map<String, dynamic> getOptimalConfig(String? turnConfig, bool isMobileNetwork) {
+    final baseConfig = getPeerConnectionConfig(turnConfig);
+    
+    if (isMobileNetwork) {
+      // Mobile network optimizations
+      baseConfig['iceCandidatePoolSize'] = 30;
+      baseConfig['iceTransportPolicy'] = 'all'; // Try direct first, then relay
+    }
+    
+    return baseConfig;
   }
 
   // Default signaling server URL (can be overridden by backend settings)
